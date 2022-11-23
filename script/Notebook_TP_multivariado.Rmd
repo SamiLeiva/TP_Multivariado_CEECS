@@ -209,7 +209,7 @@ paran::paran(datos.pca, graph=FALSE, status=FALSE, all=FALSE)
 ```
 
 ### Cargas factoriales: loadings
-Cisualización de loadings 
+Visualización de loadings 
 ```{r}
 cargas <-  loadings(cp)
 cargas <- as.data.frame.matrix(cargas)
