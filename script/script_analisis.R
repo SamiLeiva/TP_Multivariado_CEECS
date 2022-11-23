@@ -17,6 +17,12 @@ datos <- read.csv2("https://osf.io/download/huj8p/",
 # Selección de variables para el análisis: datos de participantes y variables de interés
 colnames(datos)
 datos_selec <- datos[,-c(1,3:6,9, 12:31, 37:50, 55,57,59)]
+# Cambio de nombre de las variables a castellano
+names(datos_selec) <- c("Genero", "Edad", "Educacion","BDI","GDS","P_apertura", "P_responsabilidad","P_extraversion","P_amabilidad","P_neuroticismo",
+                      "IRI_toma_perspectiva","IRI_fantasia","IRI_preocupacion_empatica","IRI_malestar_personal",
+                      "E_hostilidad_desconfianza","E_apoyo_emocional","E_miedo_activacion","E_amistad",
+                      "E_satisfaccion_de_vida","E_apoyo_instrumental","E_soledad","E_proposito","E_hostilidad_percibida",
+                      "E_rechazo_percibido","E_estres_percibido","E_afecto_positivo","E_tristeza","E_autoeficacia")
 
 #######################
 ### Estandarización ###
@@ -40,28 +46,23 @@ datos_selec[4:14] <- apply(datos_selec[4:14], 2, estandarizacion)
 
 # Unificación de variable depresión: la sintomatología depresiva se evaluó con dos escalas diferentes (una aplicada a jovenes y otra a personas de mayor edad).
 # Dado que cada individuo tiene un solo valor para depresión (BDI o GDS), se unifica en una sola variable llamada "depre".
-datos_selec$depre <- ifelse(is.na(datos_selec$gds_sum),
-                            datos_selec$bdi_sum,
-                            datos_selec$gds_sum)
+datos_selec$Depresion <- ifelse(is.na(datos_selec$GDS),
+                            datos_selec$BDI,
+                            datos_selec$GDS)
 datos_selec <- datos_selec[,-c(4,5)] # Elimino las columnas de bdi y gds
 
 # Se eliminan a los participantes con datos faltanes ya que PCA puede ser aplicado con datos completos. En este caso y para el TP de la metaria, se decide no hacer imputación de los casos.
 datos_selec <- na.omit(datos_selec)
 
 # Descripción de la muestra final
-datos_selec$gender <- factor(datos_selec$gender)
-summary(datos_selec[,c("gender", "age", "education")])
-sd(datos_selec$age)
-sd(datos_selec$education)
+datos_selec$Genero <- factor(datos_selec$Genero)
+summary(datos_selec[,c("Genero", "Edad", "Educacion")])
+sd(datos_selec$Edad)
+sd(datos_selec$Educacion)
+
+## Base para PCA
 # Base con variables numéricas de interés para aplicar PCA (24 variables)
 datos.pca <- datos_selec[-c(1:3)]
-
-#Cambio los nombres de variables al castellano
-names(datos.pca) <- c("P_apertura", "P_responsabilidad","P_extraversion","P_amabilidad","P_neuroticismo",
-                         "IRI_toma_perspectiva","IRI_fantasia","IRI_preocupacion_empatica","IRI_malestar_personal",
-                         "E_hostilidad_desconfianza","E_apoyo_emocional","E_miedo_activacion","E_amistad",
-                         "E_satisfaccion_de_vida","E_apoyo_instrumental","E_soledad","E_proposito","E_hostilidad_percibida",
-                         "E_rechazo_percibido","E_estres_percibido","E_afecto_positivo","E_tristeza","E_autoeficacia","Depresion")
 
 # Gráfico de observación de la distribución de las variables
 datos.pca%>% pivot_longer(cols = c(names(datos.pca))) %>% 
@@ -126,4 +127,15 @@ cargas %>%
 fviz_pca_var(cp, col.var="contrib",
              gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
              repel = TRUE)
+
+#Obtención de scores
+scores <- cp$scores
+head(scores)
+
+fviz_pca_ind(cp, col.ind = "cos",
+             gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
+             repel = TRUE)
+
+# Mostrando la falta de asociación entre las componentes**
+cor.plot(scores)
 

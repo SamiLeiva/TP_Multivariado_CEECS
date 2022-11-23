@@ -1,0 +1,265 @@
+---
+title: "Trabajo final: introducción al análisis multivariado"
+author: "Samanta Leiva"
+date: "23 de noviembre de 2022"
+output: 
+  html_document:
+    code_folding: hide
+    df_print: paged
+    toc: True
+    number_sections: false
+    toc_float:
+      collapsed: true
+      smooth_scroll: false
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = F, warning = F)
+```
+
+# Presentación
+
+Este es un informe con los resultados de la aplicación de la técnica de componentes principales para la materia Introducción al Análisis Multivariado de la Carrera de Especialización en Estadística para Ciencias de la Salud.
+
+# Librerías necesarias
+Se utilizaron las librerías *psych*, *tidyverse*, *corrplot* y *factoextra*.
+```{r}
+library(psych)
+library(tidyverse)
+library(corrplot)
+library(factoextra)
+```
+
+# Fuente de los datos
+Los datos utilizados para el presente análisis cuentan con una *licencia CC0 1.0 Universal* y pertenecen a Spreng (2022).  
+
+**Referencias**
+
+* Spreng, R. N. (2022, September 14). Goal-Directed Cognition in Older and Younger Adults. https://doi.org/10.17605/OSF.IO/YHZXE  
+
+* Spreng, R.N., Setton, R., Alter, U. et al. Neurocognitive aging data release with behavioral, structural and multi-echo functional MRI measures. Sci Data 9, 119 (2022). https://doi.org/10.1038/s41597-022-01231-7
+
+# Apertura de la base y selección de variables
+La base de datos original contiene 301 observaciones y 71 variables. Para el presente trabajo práctico solo se seleccionaron algunas necesarias para conocer la caraterística de la muestra evaluada (genero, edad y escolaridad de los participantes) y las 24 variables que serán analizadas para con el método de componentes principales. 
+```{r}
+datos <- read.csv2("https://osf.io/download/huj8p/",
+                    sep = ",", header = TRUE, dec = ".")
+datos_selec <- datos[,-c(1,3:6,9, 12:31, 37:50, 55,57,59)]
+# Cambio de nombre de las variables a castellano
+names(datos_selec) <- c("Genero","Edad","Educacion","BDI","GDS","P_apertura","P_responsabilidad","P_extraversion","P_amabilidad","P_neuroticismo","IRI_toma_perspectiva","IRI_fantasia","IRI_preocupacion_empatica","IRI_malestar_personal","E_hostilidad_desconfianza","E_apoyo_emocional","E_miedo_activacion","E_amistad","E_satisfaccion_de_vida","E_apoyo_instrumental","E_soledad","E_proposito","E_hostilidad_percibida","E_rechazo_percibido","E_estres_percibido","E_afecto_positivo","E_tristeza","E_autoeficacia")
+datos_selec
+```
+
+## Descripción de las variables seleccionadas  
+Las variables seleccionadas incluyen puntuaciones obtenidas por los participantes en escalas que permiten valorar la presencia de sintomatlogía depresiva, características de la personalidad, componentes de la empatía y la autopercepción de diversas variables afectivas y de interacción interpersonal. A continuación, se describen brevemente cada una de ellas.  
+
+**DEPRESIÓN**  
+Se utilizaron las puntuaciones de dos escalas: *GDS* (Geriatric Depression Scale de Yesavage et al., 1982) y *BDI* (Beck Depression Inventory de Beck et al., 1996). En ambos casos, mayor puntuación indica mayor presencia de sintomatología depresiva.  
+
+**EVALUACIÓN DE LA PERSONALIDAD**
+Se consideró al enfoque de los cinco grandes factores de la personalidad: apertura, responsabilidad, extraversión, amabilidad, y neuroticismo. Se evaluó mediante la escala *Big Five Aspects Scale* (De Young et al., 2007) que permite obtener las siguientes puntuaciones:  
+
+* *P_apertura:* Puntuaciones altas indican una tendencia de la persona a buscar nuevas ideas, emociones y actividades. Las personas con alta puntuación en Apertura se caracterizan por su capacidad imaginativa y su atracción al arte y a la cultura.  
+
+* *P_responsabilidad*: Puntuaciones altas se asocian a personas con mayor persistencia, orden y la búsqueda de logros. Las personas con altos puntajes de Responsabilidad suelen ser autodisciplinadas y ambiciosas, con una tendencia a adherirse a planes, horarios y normas.  
+
+* *P_extraversion*: Las personas con alta puntuación de Extraversión suelen ser personas enérgicas, emocionalmente positivas y con tendencia a buscar situaciones emocionalmente activadoras. Además, las personas con alta Extraversión emprenden la búsqueda activa de interacciones sociales y buscan estar en compañía de otros.  
+
+* *P_amabilidad*: Puntuaciones altas indican una mayor tendencia a mantener relaciones interpersonales positivas, y evitar conflictos mediante el compromiso de las partes y la cooperación.  
+
+* *P_neuroticismo*: Puntuaciones más altas indican una mayor tendencia a experimentar emociones negativas como miedo, ansiedad y culpa. Las personas con altos puntajes en Neuroticismo suelen preocuparse en demasía por las opiniones de otras personas sobre ellos, son defensivos y buscan cuidado y protección por parte de allegados.  
+
+
+**EMPATÍA**  
+Se utilizó la escala *Interpersonal Reactivity* Index (Davis, 1983) para evaluar las cuatro dimensiones de la empatía.  
+
+* *IRI_toma_perspectiva*: Puntuaciones altas indican mayor habilidad para comprender y adoptar de forma espontánea el punto de vista psicológico de otras personas.  
+
+* *IRI_fantasia*: Puntuaciones altas indican mayor tendencia de los sujetos a identificarse con sentimientos y acciones de personajes ficticios.  
+
+* *IRI_preocupacion_empatica*: Puntuaciones altas indican mayor tendencia de los sujetos a experimentar sentimientos de compasión, preocupación y calidez hacia otros en situaciones desafortunadas.  
+
+* *IRI_malestar_personal*: Puntuaciones altas indican mayor tendencia a experimentar sentimientos de incomodidad y ansiedad en intercambios interpersonales tensos o al presenciar experiencias negativas vividas por terceros. 
+
+
+**AUTOPERCEPCIÓN DE AFECTIVIDAD Y RELACIONES INTERPERSONALES**  
+Evaluación de autopercepción de variables afectivas con la herramienta *NIH Toolbox Emotion* (Gershon et al., 2013). Se consideraron a las siguientes variables:  
+
+* *E_hostilidad_desconfianza*: Mayor puntaje indica mayores actitudes cínicas y de desconfianza hacia los otros y sus motivaciones.  
+
+* *E_apoyo_emocional*: Mayor puntaje indica una mayor percepción subjetiva de contar con la disponibilidad de una red social de contención. Particularmente, refiere a la valoración que tiene la persona sobre la disponibilidad de la propia red social para escuchar y ayudar con los problemas de uno de forma empática.  
+
+* *E_miedo_activacion*: Mayores puntajes indican más presencia de síntomas somáticos realacionados con la activación de la emoción del miedo y la ansiedad.  
+
+* *E_amistad*: Mayores puntajes indican una mayor percepción subjetiva de disponibilidad de amigos y compañía para interactuar.  
+
+* *E_satisfaccion_de_vida*: Indicador de bienestar psicológico. Mayor puntuación indica una mayor percepción subjetiva respecto de una satisfacción general con las experiencias de la vida.  
+
+* *E_apoyo_instrumental*: Mayor puntaje indica una mayor percepción subjetiva de contar con la disponibilidad de una red social de contención. Particularmente, refiere a la valoración que tiene la persona sobre la disponibilidad de otras personas en el círculo social para obtener ayuda material, en caso de ser necesario.  
+
+* *E_soledad*: Mayores puntajes indican una mayor percepción subjetiva de soledad, entendida como la sensación autopercibida de distanciamiento social respecto de la propia red social.  
+
+* *E_proposito*: Mayores puntajes indican una mayor autopercepción de que la vida propia importa y que se está realizando algo importante con ella.  
+
+* *E_hostilidad_percibida*: Indicador de angustia social que refiere al grado en que un individuo percibe sus interacciones sociales diarias como negativas o angustiosas. Particularmente, mayores puntuaciones indican mayor hostilidad percibida, es decir una percepción de mayores discusiones o críticas del círculo social.  
+
+* *E_rechazo_percibido*: Otro indicador de angustia social. Mayores puntuaciones indican mayor autopercepción sobre rechazo social, es decir una sensación frecuente de que otras personas no lo escuchan cuando pide ayuda o no le prestan atención.  
+
+* *E_estres_percibido*: El estrés psicológico ocurre cuando un individuo percibe que las demandas ambientales o internas que son personalmente significativas exceden su capacidad de adaptación. La escala evalúa el estrés percibido definido como las percepciones individuales sobre la naturaleza de los eventos y su relación con los valores y los recursos de afrontamiento de un individuo. Mayores puntuaciones indican mayor estrés psicológico.  
+
+* *E_afecto_positivo*: Refiere a sentimientos que reflejan un nivel de compromiso placentero con el entorno, como felicidad, alegría, emoción, entusiasmo y satisfacción. Mayores puntuaciones indican mayor afectividad positiva percibida.  
+
+* *E_tristeza*: La tristeza se distingue por bajos niveles de afecto positivo y se compone de síntomas que son principalmente indicadores afectivos (mal humor) y cognitivos (percepciones negativas de uno mismo, del mundo y del futuro) de depresión. Mayores puntuaciones indican mayores sentimientos de tristeza.  
+
+* *E_autoeficacia*: La autoeficacia se describe como la creencia de una persona en su capacidad para gestionar su funcionamiento y tener control sobre eventos significativos. Mayores puntuaciones indican mayor percepción de autoeficacia.  
+
+
+# Estandarización de las variables
+Para realizar el análisis de componentes principales se deben estandarizar las variables dado que la magnitud influye en el análisis. En este caso, todas las variables consideradas, excepto algunas, están expresadas en puntaje burto. Otras, están expresadas en puntaje T, que es el que arroja alguna de las escalas de evaluación. Se pasan todos a puntaje estandarizado con media = 0 y varianza = 1.
+
+```{r}
+# Las variables 15 a 28 están expresadas en puntaje T. Los paso a Z.
+estandarizacionT <- function(x){
+  (x-50)/10
+}
+datos_selec[15:28] <- apply(datos_selec[15:28], 2, estandarizacionT)
+# El resto están expresadas en puntaje bruto. Estandarizo en función de su media y DE
+estandarizacion <- function(x){
+  (x-mean(x, na.rm = TRUE))/sd(x, na.rm=TRUE)
+}
+datos_selec[4:14] <- apply(datos_selec[4:14], 2, estandarizacion)
+datos_selec
+```
+
+# Pusta a punto previo a la aplicación de PCA y visualización exploratoria
+Se unifican las dos puntuaciones de la evaluación de la *depresión* ya que a una parte de la muestra se le aplicó la escala GDS y a la otra el BDI (cada participante tuvo puntuaciones en una o en otra pero no en ambas). Se crea una nueva variable llamada **depresion** que contiene en una unica columna los valores de esas escalas.  
+Además, se eliminan a las filas con datos faltantes ya que para aplicar PCA se requiere tener a la matriz de datos completa. Luego, se observa la composición final de la muestra y se aplicaron gráficos exploratorios para observar el comportamiento individual de cada variable.  
+
+```{r}
+# Unificación de los valores de la evaluación de depresión en una única variable
+datos_selec$Depresion <- ifelse(is.na(datos_selec$GDS),
+                            datos_selec$BDI,
+                            datos_selec$GDS)
+datos_selec <- datos_selec[,-c(4,5)] # Elimino las columnas BDI y GDS
+# Se eliminan a los participantes con datos faltanes.
+datos_selec <- na.omit(datos_selec)
+# Descripción de la muestra final
+datos_selec$Genero <- factor(datos_selec$Genero)
+summary(datos_selec[,c("Genero", "Edad", "Educacion")])
+sd(datos_selec$Edad)
+sd(datos_selec$Educacion)
+```
+
+Por último, se crea una base de datos que contiene únicamente las variables numéricas a analizar mediante PCA y se realizan gráficos exploratorios de las mismas.
+
+```{r}
+# Base con variables numéricas de interés para aplicar PCA (24 variables)
+datos.pca <- datos_selec[-c(1:3)]
+datos.pca
+```
+
+```{r, fig.height = 10, fig.width=10}
+# Gráfico de observación de la distribución de las variables
+datos.pca%>% pivot_longer(cols = c(names(datos.pca))) %>% 
+  ggplot(aes(x=value))+ 
+  geom_histogram(bins=25,color="white", fill = "#6C4DB6")+
+  facet_wrap(~name, scales='free')+theme_minimal()+
+  labs(x="Valor",y="Frecuencia",title="Distribuciones de las variables analizadas")
+```
+
+# Correlación entre las variables
+Previo a la aplicación del PCA se analiza la correlación entre las variables. Se muestra con una cruz si la asociación no fue significativa.
+```{r, fig.height = 7, fig.width=7}
+    # Matriz de correlaciones de Pearson
+    mat.cor <- datos.pca %>% cor()
+    # Cálculo de los p-valores de las correlaciones:
+    pvalores <- cor.mtest(datos.pca, conf.level = .95)
+    # Grafico    
+    mat.cor %>% corrplot(method = 'circle', type = "lower", tl.cex = 0.7,
+                   order = 'FPC', p.mat =pvalores$p, insig = "pch", tl.col='black',
+                   col = c('#AC0110','#CF3D49','#D4767E','#F2B5BA',
+                           '#d9f0d3','#a6dba0','#5aae61','#1b7837'))
+```
+
+Testeo formal de factorización de la matriz mediante test de Bartlett
+```{r}
+cortest.bartlett(cor(datos.pca), n = nrow(datos.pca), diag = TRUE)
+```
+
+# Análisis de componentes principales (PCA)
+Se utiliza el comando princom para la obtención de las componentes
+```{r}
+#Aplicación de componentes principales
+cp <- princomp(datos.pca)
+summary(cp)
+```
+
+**Visualización de varianza explicada: screeplot**  
+Importancia relativa de las componentes.
+```{r}
+#Screeplot
+fviz_screeplot(cp, addlabels = TRUE)
+```
+Número optimo de componentes
+```{r}
+#Numero optimo de componentes
+paran::paran(datos.pca, graph=FALSE, status=FALSE, all=FALSE)
+```
+
+### Cargas factoriales: loadings
+Para visualizar más sencillamente las cargas de cada variable sobre las tres componentes, se guarda los resultados de los *loadings* en un dataframe para mostrar los resultados de esas componentes. 
+```{r}
+cargas <-  loadings(cp)
+cargas <- as.data.frame.matrix(cargas)
+cargas
+```
+
+**Visualización de las cargas para cada componente**  
+```{r}
+cargas %>% 
+  tibble::rownames_to_column(var="variable") %>% 
+  pivot_longer(cols = -variable) %>% 
+  filter(name %in% c("Comp.1","Comp.2","Comp.3")) %>% 
+  group_by(name) %>% 
+  slice_max(abs(value), n=13) %>% 
+  ungroup() %>%
+  ggplot(aes(x=variable,
+             y=value))+
+  geom_col(alpha=0.8, fill = "#4DB693")+ 
+  coord_flip()+
+  facet_wrap(~name, scales='free')+ theme_minimal()+
+  labs(x='Variable',y='Carga factorial', 
+       title='Carga factorial: componentes principales', 
+       subtitle='Primeros 3 componentes (13 cargas más relevantes)')
+```
+
+### Visualización de los resultados: biplot
+Gráfico biplot (componentes 1 y 2)
+```{r}
+#Gráfico biplot
+fviz_pca_var(cp, col.var="contrib",
+             gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
+             repel = TRUE)
+```
+
+### Scores
+Valores obtenidos por los participantes en las nuevas componentes
+```{r}
+scores <- cp$scores
+head(scores)
+```
+
+Gráfico de scores sobre las dos primeras componentes
+```{r}
+fviz_pca_ind(cp, col.ind = "cos",
+             gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
+             repel = TRUE)
+```
+
+**Mostrando la falta de asociación entre las componentes**
+Gráfico de demostración de una de las características de las componentes obtenidas mediante PCA
+
+```{r}
+cor.plot(scores)
+```
+
