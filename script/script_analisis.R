@@ -137,5 +137,5 @@ fviz_pca_ind(cp, col.ind = "cos",
              repel = TRUE)
 
 # Mostrando la falta de asociación entre las componentes**
-cor.plot(scores)
+corrplot(cor(scores), type = "lower", tl.cex = 0.7, tl.col='black')
 
