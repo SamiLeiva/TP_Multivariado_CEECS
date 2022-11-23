@@ -251,7 +251,7 @@ head(scores)
 
 Gráfico de scores sobre las dos primeras componentes
 ```{r}
-fviz_pca_ind(cp, col.ind = "cos",
+fviz_pca_ind(cp, col.ind = "cos2",
              gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
              repel = TRUE)
 ```
