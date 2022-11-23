@@ -56,7 +56,7 @@ Las variables seleccionadas incluyen puntuaciones obtenidas por los participante
 **DEPRESIÓN**  
 Se utilizaron las puntuaciones de dos escalas: *GDS* (Geriatric Depression Scale de Yesavage et al., 1982) y *BDI* (Beck Depression Inventory de Beck et al., 1996). En ambos casos, mayor puntuación indica mayor presencia de sintomatología depresiva.  
 
-**EVALUACIÓN DE LA PERSONALIDAD**
+**EVALUACIÓN DE LA PERSONALIDAD**  
 Se consideró al enfoque de los cinco grandes factores de la personalidad: apertura, responsabilidad, extraversión, amabilidad, y neuroticismo. Se evaluó mediante la escala *Big Five Aspects Scale* (De Young et al., 2007) que permite obtener las siguientes puntuaciones:  
 
 * *P_apertura:* Puntuaciones altas indican una tendencia de la persona a buscar nuevas ideas, emociones y actividades. Las personas con alta puntuación en Apertura se caracterizan por su capacidad imaginativa y su atracción al arte y a la cultura.  
@@ -200,6 +200,8 @@ Importancia relativa de las componentes.
 #Screeplot
 fviz_screeplot(cp, addlabels = TRUE)
 ```
+
+
 Número optimo de componentes
 ```{r}
 #Numero optimo de componentes
@@ -207,7 +209,7 @@ paran::paran(datos.pca, graph=FALSE, status=FALSE, all=FALSE)
 ```
 
 ### Cargas factoriales: loadings
-Para visualizar más sencillamente las cargas de cada variable sobre las tres componentes, se guarda los resultados de los *loadings* en un dataframe para mostrar los resultados de esas componentes. 
+Cisualización de loadings 
 ```{r}
 cargas <-  loadings(cp)
 cargas <- as.data.frame.matrix(cargas)
@@ -215,7 +217,8 @@ cargas
 ```
 
 **Visualización de las cargas para cada componente**  
-```{r}
+Para visualizar más sencillamente las cargas de las variables más importantes sobre las tres componentes.  
+```{r, fig.width=10}
 cargas %>% 
   tibble::rownames_to_column(var="variable") %>% 
   pivot_longer(cols = -variable) %>% 
@@ -256,10 +259,10 @@ fviz_pca_ind(cp, col.ind = "cos2",
              repel = TRUE)
 ```
 
-**Mostrando la falta de asociación entre las componentes**
+**Mostrando la NO asociación entre las componentes**  
 Gráfico de demostración de una de las características de las componentes obtenidas mediante PCA
 
 ```{r}
-cor.plot(scores)
+corrplot(cor(scores), type = "lower", tl.cex = 0.7, tl.col='black')
 ```
 
